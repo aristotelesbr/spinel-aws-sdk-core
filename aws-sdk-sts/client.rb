@@ -39,7 +39,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.assume_role(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.assume_role(xml)
         end
         Responses::AssumeRole.new(data, request_context(body))
@@ -55,7 +55,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.assume_role_with_saml(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, false)
           data = Parsers.assume_role_with_saml(xml)
         end
         Responses::AssumeRoleWithSAML.new(data, request_context(body))
@@ -71,7 +71,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.assume_role_with_web_identity(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, false)
           data = Parsers.assume_role_with_web_identity(xml)
         end
         Responses::AssumeRoleWithWebIdentity.new(data, request_context(body))
@@ -87,7 +87,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.assume_root(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.assume_root(xml)
         end
         Responses::AssumeRoot.new(data, request_context(body))
@@ -103,7 +103,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.decode_authorization_message(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.decode_authorization_message(xml)
         end
         Responses::DecodeAuthorizationMessage.new(data, request_context(body))
@@ -119,7 +119,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_access_key_info(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_access_key_info(xml)
         end
         Responses::GetAccessKeyInfo.new(data, request_context(body))
@@ -135,7 +135,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_caller_identity(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_caller_identity(xml)
         end
         Responses::GetCallerIdentity.new(data, request_context(body))
@@ -151,7 +151,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_delegated_access_token(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_delegated_access_token(xml)
         end
         Responses::GetDelegatedAccessToken.new(data, request_context(body))
@@ -167,7 +167,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_federation_token(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_federation_token(xml)
         end
         Responses::GetFederationToken.new(data, request_context(body))
@@ -183,7 +183,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_session_token(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_session_token(xml)
         end
         Responses::GetSessionToken.new(data, request_context(body))
@@ -199,7 +199,7 @@ module Aws
         elsif stub && stub.data?
           data = Stubs.get_web_identity_token(stub.data)
         else
-          xml = stub ? stub_xml(stub, body) : send_query(body)
+          xml = stub ? stub_xml(stub, body) : send_query(body, true)
           data = Parsers.get_web_identity_token(xml)
         end
         Responses::GetWebIdentityToken.new(data, request_context(body))

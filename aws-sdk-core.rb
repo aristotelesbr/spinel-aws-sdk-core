@@ -5,6 +5,8 @@
 # parts the package carries, in an order where each one's dependencies come
 # first, and keeps the gem's Aws.shared_config.
 require_relative 'aws-sdk-core/errors'
+require_relative 'aws-sdk-core/arn'
+require_relative 'aws-sdk-core/arn_parser'
 require_relative 'aws-sdk-core/credential_provider'
 require_relative 'aws-sdk-core/refreshing_credentials'
 require_relative 'aws-sdk-core/credentials'

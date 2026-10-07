@@ -217,7 +217,8 @@ module Aws
           role_session_name: ENV['AWS_ROLE_SESSION_NAME']
         }
         cfg[:region] = region if region
-        Aws::Plugins::UserAgent.metric('CREDENTIALS_ENV_VARS_STS_WEB_ID_TOKEN') do
+        # spinel-aws-sdk-core: through with_metrics, as the rest of the chain.
+        with_metrics('CREDENTIALS_ENV_VARS_STS_WEB_ID_TOKEN') do
           creds = AssumeRoleWebIdentityCredentials.new(cfg)
           creds.metrics << 'CREDENTIALS_ENV_VARS_STS_WEB_ID_TOKEN'
           creds
@@ -252,8 +253,10 @@ module Aws
       Aws.shared_config.assume_role_credentials_from_config(assume_opts)
     end
 
-    def with_metrics(metrics, &block)
-      Aws::Plugins::UserAgent.metric(*metrics, &block)
+    # spinel-aws-sdk-core: the gem records these metrics for its User-Agent
+    # header, which the package does not build; the block runs as is.
+    def with_metrics(_metrics, &block)
+      block.call
     end
   end
 end

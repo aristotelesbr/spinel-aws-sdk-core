@@ -247,7 +247,7 @@ module Aws
       # :access_key_id and :secret_access_key, then the provider chain. With
       # stub_responses, the gem's stubbed credentials.
       def resolve_credentials
-        return @options[:credentials] if @options[:credentials]
+        return @options[:credentials] if @options.key?(:credentials)
         if @options[:access_key_id]
           return Aws::Credentials.new(@options[:access_key_id], @options[:secret_access_key], @options[:session_token])
         end
@@ -304,15 +304,15 @@ module Aws
         xml_or_error(stub.status_code.to_i, stub.body.to_s, body)
       end
 
-      # Sends the query body, retrying as the gem's legacy handler (the
-      # default) or standard handler does, and returns the 2xx body or raises
-      # the last error.
-      def send_query(body)
+      # Sends the query body, signed unless the operation is unauthenticated,
+      # retrying as the gem's legacy handler (the default) or standard handler
+      # does, and returns the 2xx body or raises the last error.
+      def send_query(body, signed = true)
         @retries = 0
         capacity = nil
         loop do
           url = endpoint
-          status, xml, date, network_error = transmit(body, url)
+          status, xml, date, network_error = transmit(body, url, signed)
           server_time = Retries.server_time(date)
           if network_error.nil? && status >= 200 && status < 300
             @retry_quota.release(capacity) if @retry_mode == 'standard'
@@ -322,7 +322,7 @@ module Aws
           code, message = network_error ? [nil, nil] : error_code_and_message(status, xml)
           name = network_error ? 'Seahorse::Client::NetworkingError' : Runtime.error_constant(code)
           failure = Retries::Failure.new(name, status, !network_error.nil?, server_time)
-          refreshable = @credentials.respond_to?(:refresh!)
+          refreshable = !@credentials.nil? && @credentials.respond_to?(:refresh!)
           if @retry_mode == 'standard'
             @clock_skew.update_clock_correction(url, server_time) if failure.clock_skew?
             @clock_skew.update_estimated_skew(url, server_time)
@@ -347,8 +347,8 @@ module Aws
         end
       end
 
-      # One signed POST: [status, body, Date header, networking error].
-      def transmit(body, url)
+      # One POST: [status, body, Date header, networking error].
+      def transmit(body, url, signed)
         uri = URI.parse(url)
         headers = {
           'content-type' => CONTENT_TYPE,
@@ -357,13 +357,16 @@ module Aws
         headers['amz-sdk-request'] = sdk_request_header(url) if @retry_mode == 'standard'
         skew = @correct_clock_skew ? @clock_skew.clock_correction(url) : 0
         headers['x-amz-date'] = (Time.now.utc + skew).strftime('%Y%m%dT%H%M%SZ') if skew != 0
-        signer = Aws::Sigv4::Signer.new(service: @signing_name, region: @region,
-                                        credentials_provider: @credentials)
-        signature = signer.sign_request(http_method: 'POST', url: url, headers: headers, body: body)
-
         request = Net::HTTP::Post.new(uri.path.empty? ? '/' : uri.path)
         headers.each { |name, value| request[name] = value }
-        signature.headers.each { |name, value| request[name] = value unless name == 'host' }
+        if signed
+          raise Aws::Errors::MissingCredentialsError if @credentials.nil?
+
+          signer = Aws::Sigv4::Signer.new(service: @signing_name, region: @region,
+                                          credentials_provider: @credentials)
+          signature = signer.sign_request(http_method: 'POST', url: url, headers: headers, body: body)
+          signature.headers.each { |name, value| request[name] = value unless name == 'host' }
+        end
         request['user-agent'] = USER_AGENT
         request['accept-encoding'] = ''
         request['accept'] = '*/*'

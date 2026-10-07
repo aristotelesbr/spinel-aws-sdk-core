@@ -659,8 +659,10 @@ module Aws
       sso_session
     end
 
-    def with_metrics(metrics, &block)
-      Aws::Plugins::UserAgent.metric(*metrics, &block)
+    # spinel-aws-sdk-core: the gem records these metrics for its User-Agent
+    # header, which the package does not build; the block runs as is.
+    def with_metrics(_metrics, &block)
+      block.call
     end
   end
 end

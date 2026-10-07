@@ -1,0 +1,12 @@
+assume role: ASIAONE secret-ASIAONE token-ASIAONE 123456789012
+  expiration: Time true
+  set: true
+near expiration: ASIAAGAIN
+web identity: ASIAWEB 123456789012
+denied: Aws::STS::Errors::AccessDenied not allowed to assume
+request 1: Credential=AKIDBASE Action=AssumeRole&DurationSeconds=900&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fapp&RoleSessionName=app&Version=2011-06-15
+request 2: Credential=AKIDBASE Action=AssumeRole&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fapp&RoleSessionName=app&Version=2011-06-15
+request 3: Credential=AKIDBASE Action=AssumeRole&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fapp&RoleSessionName=app&Version=2011-06-15
+request 4: unsigned Action=AssumeRoleWithWebIdentity&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fweb&RoleSessionName=web&Version=2011-06-15&WebIdentityToken=TOKEN
+request 5: Credential=AKIDBASE Action=AssumeRole&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fnope&RoleSessionName=app&Version=2011-06-15
+stubbed client: ASIASTUB 210987654321 2030-01-02 03:04:05 UTC
