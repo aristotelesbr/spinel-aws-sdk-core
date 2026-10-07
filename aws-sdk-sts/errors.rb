@@ -63,6 +63,140 @@ module Aws
       class PackedPolicyTooLarge < ServiceError
       end
 
+      # Error codes any AWS service may return without its model listing
+      # them; the gem creates their classes when it first sees the code.
+      class AccessDenied < ServiceError
+      end
+
+      class AccessDeniedException < ServiceError
+      end
+
+      class AuthFailure < ServiceError
+      end
+
+      class BadDigest < ServiceError
+      end
+
+      class BandwidthLimitExceeded < ServiceError
+      end
+
+      class CRC32CheckFailed < ServiceError
+      end
+
+      class EC2ThrottledException < ServiceError
+      end
+
+      class ExpiredToken < ServiceError
+      end
+
+      class IncompleteSignature < ServiceError
+      end
+
+      class InternalError < ServiceError
+      end
+
+      class InternalFailure < ServiceError
+      end
+
+      class InvalidAccessKeyId < ServiceError
+      end
+
+      class InvalidClientTokenId < ServiceError
+      end
+
+      class InvalidParameterCombination < ServiceError
+      end
+
+      class InvalidParameterValue < ServiceError
+      end
+
+      class InvalidQueryParameter < ServiceError
+      end
+
+      class InvalidSignatureException < ServiceError
+      end
+
+      class LimitExceededException < ServiceError
+      end
+
+      class MalformedQueryString < ServiceError
+      end
+
+      class MissingAction < ServiceError
+      end
+
+      class MissingAuthenticationToken < ServiceError
+      end
+
+      class MissingParameter < ServiceError
+      end
+
+      class NotAuthorized < ServiceError
+      end
+
+      class OptInRequired < ServiceError
+      end
+
+      class PriorRequestNotComplete < ServiceError
+      end
+
+      class ProvisionedThroughputExceededException < ServiceError
+      end
+
+      class RequestExpired < ServiceError
+      end
+
+      class RequestInTheFuture < ServiceError
+      end
+
+      class RequestLimitExceeded < ServiceError
+      end
+
+      class RequestThrottled < ServiceError
+      end
+
+      class RequestThrottledException < ServiceError
+      end
+
+      class RequestTimeTooSkewed < ServiceError
+      end
+
+      class RequestTimeout < ServiceError
+      end
+
+      class RequestTimeoutException < ServiceError
+      end
+
+      class ServiceUnavailable < ServiceError
+      end
+
+      class SignatureDoesNotMatch < ServiceError
+      end
+
+      class SlowDown < ServiceError
+      end
+
+      class ThrottledException < ServiceError
+      end
+
+      class Throttling < ServiceError
+      end
+
+      class ThrottlingException < ServiceError
+      end
+
+      class TooManyRequestsException < ServiceError
+      end
+
+      class TransactionInProgressException < ServiceError
+      end
+
+      class UnrecognizedClientException < ServiceError
+      end
+
+      class ValidationError < ServiceError
+      end
+
       # The class for a code, named as the gem's DynamicErrors#error_class
       # names it; a code the model does not list gets ServiceError.
       def self.error(code, context, message)
@@ -85,6 +219,50 @@ module Aws
         when "InvalidIdentityToken" then InvalidIdentityToken.new(context, message, Aws::EmptyStructure.new, constant)
         when "MalformedPolicyDocument" then MalformedPolicyDocument.new(context, message, Aws::EmptyStructure.new, constant)
         when "PackedPolicyTooLarge" then PackedPolicyTooLarge.new(context, message, Aws::EmptyStructure.new, constant)
+        when "AccessDenied" then AccessDenied.new(context, message, Aws::EmptyStructure.new, constant)
+        when "AccessDeniedException" then AccessDeniedException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "AuthFailure" then AuthFailure.new(context, message, Aws::EmptyStructure.new, constant)
+        when "BadDigest" then BadDigest.new(context, message, Aws::EmptyStructure.new, constant)
+        when "BandwidthLimitExceeded" then BandwidthLimitExceeded.new(context, message, Aws::EmptyStructure.new, constant)
+        when "CRC32CheckFailed" then CRC32CheckFailed.new(context, message, Aws::EmptyStructure.new, constant)
+        when "EC2ThrottledException" then EC2ThrottledException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ExpiredToken" then ExpiredToken.new(context, message, Aws::EmptyStructure.new, constant)
+        when "IncompleteSignature" then IncompleteSignature.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InternalError" then InternalError.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InternalFailure" then InternalFailure.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidAccessKeyId" then InvalidAccessKeyId.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidClientTokenId" then InvalidClientTokenId.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidParameterCombination" then InvalidParameterCombination.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidParameterValue" then InvalidParameterValue.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidQueryParameter" then InvalidQueryParameter.new(context, message, Aws::EmptyStructure.new, constant)
+        when "InvalidSignatureException" then InvalidSignatureException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "LimitExceededException" then LimitExceededException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "MalformedQueryString" then MalformedQueryString.new(context, message, Aws::EmptyStructure.new, constant)
+        when "MissingAction" then MissingAction.new(context, message, Aws::EmptyStructure.new, constant)
+        when "MissingAuthenticationToken" then MissingAuthenticationToken.new(context, message, Aws::EmptyStructure.new, constant)
+        when "MissingParameter" then MissingParameter.new(context, message, Aws::EmptyStructure.new, constant)
+        when "NotAuthorized" then NotAuthorized.new(context, message, Aws::EmptyStructure.new, constant)
+        when "OptInRequired" then OptInRequired.new(context, message, Aws::EmptyStructure.new, constant)
+        when "PriorRequestNotComplete" then PriorRequestNotComplete.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ProvisionedThroughputExceededException" then ProvisionedThroughputExceededException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestExpired" then RequestExpired.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestInTheFuture" then RequestInTheFuture.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestLimitExceeded" then RequestLimitExceeded.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestThrottled" then RequestThrottled.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestThrottledException" then RequestThrottledException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestTimeTooSkewed" then RequestTimeTooSkewed.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestTimeout" then RequestTimeout.new(context, message, Aws::EmptyStructure.new, constant)
+        when "RequestTimeoutException" then RequestTimeoutException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ServiceUnavailable" then ServiceUnavailable.new(context, message, Aws::EmptyStructure.new, constant)
+        when "SignatureDoesNotMatch" then SignatureDoesNotMatch.new(context, message, Aws::EmptyStructure.new, constant)
+        when "SlowDown" then SlowDown.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ThrottledException" then ThrottledException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "Throttling" then Throttling.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ThrottlingException" then ThrottlingException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "TooManyRequestsException" then TooManyRequestsException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "TransactionInProgressException" then TransactionInProgressException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "UnrecognizedClientException" then UnrecognizedClientException.new(context, message, Aws::EmptyStructure.new, constant)
+        when "ValidationError" then ValidationError.new(context, message, Aws::EmptyStructure.new, constant)
         else ServiceError.new(context, message, Aws::EmptyStructure.new, constant)
         end
       end

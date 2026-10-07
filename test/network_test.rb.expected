@@ -1,0 +1,30 @@
+account: 123456789012 arn:aws:iam::123456789012:user/ari AIDAEXAMPLE
+endpoint: http://127.0.0.1:PORT
+error: Aws::STS::Errors::AccessDenied AccessDenied not authorized
+first: POST / HTTP/1.1
+  headers: accept accept-encoding amz-sdk-invocation-id authorization content-length content-type host x-amz-content-sha256 x-amz-date
+  content-type: application/x-www-form-urlencoded; charset=utf-8
+  accept-encoding: ""
+  host: true
+  invocation id: true
+  date: true
+  content sha256: true
+  authorization: AWS4-HMAC-SHA256 Credential=AKID/DATE/sa-east-1/sts/aws4_request, SignedHeaders=amz-sdk-invocation-id;content-type;host;x-amz-content-sha256;x-amz-date, Signature=SIG
+  body: Action=GetCallerIdentity&Version=2011-06-15
+  signature valid: true
+error request: POST / HTTP/1.1 Action=GetCallerIdentity&Version=2011-06-15
+env region: Credential=AKIDOPT/DATE/eu-west-1/sts/aws4_request
+  signature valid: true
+env credentials: Credential=AKIDENV/DATE/eu-west-1/sts/aws4_request
+  signature valid: true
+us-east-1: https://sts.us-east-1.amazonaws.com
+sa-east-1: https://sts.sa-east-1.amazonaws.com
+cn-north-1: https://sts.cn-north-1.amazonaws.com.cn
+us-gov-west-1: https://sts.us-gov-west-1.amazonaws.com
+us-iso-east-1: https://sts.us-iso-east-1.c2s.ic.gov
+us-isob-east-1: https://sts.us-isob-east-1.sc2s.sgov.gov
+eu-isoe-west-1: https://sts.eu-isoe-west-1.cloud.adc-e.uk
+us-isof-south-1: https://sts.us-isof-south-1.csp.hci.ic.gov
+eusc-de-east-1: https://sts.eusc-de-east-1.amazonaws.eu
+aws-global: https://sts.amazonaws.com
+no region: No region was provided. Configure the `:region` option or export the region name to ENV['AWS_REGION']

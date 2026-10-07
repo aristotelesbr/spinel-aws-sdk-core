@@ -1,6 +1,10 @@
 # frozen_string_literal: true
 
 require 'stringio'
+require 'uri'
+require 'net/http'
+require 'securerandom'
+require 'aws-sigv4'
 
 # spinel-aws-sdk-core: written for the package, not copied from the gem. The
 # gem builds each call from its API model at run time (Seahorse handlers,
@@ -40,10 +44,11 @@ module Aws
 
     # The request side of a call, as the gem's context.http_request shows it.
     class HttpRequest
-      attr_reader :body
+      attr_reader :body, :endpoint
 
-      def initialize(body)
+      def initialize(body, endpoint)
         @body = StringIO.new(body)
+        @endpoint = URI.parse(endpoint)
       end
     end
 
@@ -52,9 +57,22 @@ module Aws
     class Context
       attr_reader :http_request, :retries
 
-      def initialize(body, retries)
-        @http_request = HttpRequest.new(body)
+      def initialize(body, endpoint, retries)
+        @http_request = HttpRequest.new(body, endpoint)
         @retries = retries
+      end
+    end
+
+    # The DNS suffix of a region's partition, as aws-partitions' region
+    # patterns give it; an unknown region is in the aws partition.
+    def self.dns_suffix(region)
+      if region.start_with?('cn-') then 'amazonaws.com.cn'
+      elsif region.start_with?('us-isob-') then 'sc2s.sgov.gov'
+      elsif region.start_with?('us-isof-') then 'csp.hci.ic.gov'
+      elsif region.start_with?('us-iso-') then 'c2s.ic.gov'
+      elsif region.start_with?('eu-isoe-') then 'cloud.adc-e.uk'
+      elsif region.start_with?('eusc-') then 'amazonaws.eu'
+      else 'amazonaws.com'
       end
     end
 
@@ -191,6 +209,8 @@ module Aws
     # The base of every generated client: options, stubs and the transport.
     class Client
       STUB_ERROR_MESSAGE = 'stubbed-response-error-message'
+      CONTENT_TYPE = 'application/x-www-form-urlencoded; charset=utf-8'
+      USER_AGENT = 'aws-sdk-ruby3/3.257.0 ua/2.1 lang/spinel'
 
       def initialize(options, endpoint_prefix, signing_name)
         @options = options
@@ -202,6 +222,44 @@ module Aws
         if stubs.is_a?(Hash)
           stubs.each { |operation, given| stub_responses(operation, given) }
         end
+        @region = resolve_region
+        @credentials = resolve_credentials
+      end
+
+      # The gem's RegionalEndpoint#resolve_region: the option, then
+      # AWS_REGION, AMAZON_REGION and AWS_DEFAULT_REGION, then the shared
+      # config. With stub_responses and no region, the gem's 'us-stubbed-1'.
+      def resolve_region
+        region = @options[:region]
+        region = ENV.values_at('AWS_REGION', 'AMAZON_REGION', 'AWS_DEFAULT_REGION').compact.first if region.nil?
+        region = nil if region == ''
+        region = Aws.shared_config.region(profile: @options[:profile]) if region.nil?
+        region = 'us-stubbed-1' if region.nil? && stub_responses?
+        raise Aws::Errors::MissingRegionError if region.nil? || region == ''
+
+        region
+      end
+
+      # The gem's CredentialsConfiguration: the :credentials option, then
+      # :access_key_id and :secret_access_key, then the provider chain. With
+      # stub_responses, the gem's stubbed credentials.
+      def resolve_credentials
+        return @options[:credentials] if @options[:credentials]
+        if @options[:access_key_id]
+          return Aws::Credentials.new(@options[:access_key_id], @options[:secret_access_key], @options[:session_token])
+        end
+        return Aws::Credentials.new('stubbed-akid', 'stubbed-secret') if stub_responses?
+
+        Aws::CredentialProviderChain.new.resolve
+      end
+
+      # The :endpoint option, or the service's regional endpoint as the
+      # gem's endpoint rules build it.
+      def endpoint
+        return @options[:endpoint].to_s if @options[:endpoint]
+        return "https://#{@endpoint_prefix}.amazonaws.com" if @region == 'aws-global'
+
+        "https://#{@endpoint_prefix}.#{@region}.#{Runtime.dns_suffix(@region)}"
       end
 
       def stub_responses?
@@ -232,24 +290,61 @@ module Aws
         list.shift
       end
 
+      def request_context(body)
+        Context.new(body, endpoint, @retries)
+      end
+
       # The body XML of a raw HTTP stub, or the error it describes.
       def stub_xml(stub, body)
-        context = Context.new(body, @retries)
-        raise ErrorResponse.new(stub.error_code, context, STUB_ERROR_MESSAGE) if stub.error?
+        raise ErrorResponse.new(stub.error_code, request_context(body), STUB_ERROR_MESSAGE) if stub.error?
 
-        status = stub.status_code.to_i
-        return stub.body.to_s if status >= 200 && status < 300
+        xml_or_error(stub.status_code.to_i, stub.body.to_s, body)
+      end
 
-        error = Xml.parse(stub.body.to_s)
+      # Signs the query body with aws-sigv4 and POSTs it to the endpoint, with
+      # the headers the gem sends.
+      def send_query(body)
+        url = endpoint
+        uri = URI.parse(url)
+        headers = {
+          'content-type' => CONTENT_TYPE,
+          'amz-sdk-invocation-id' => SecureRandom.uuid
+        }
+        signer = Aws::Sigv4::Signer.new(service: @signing_name, region: @region,
+                                        credentials_provider: @credentials)
+        signature = signer.sign_request(http_method: 'POST', url: url, headers: headers, body: body)
+
+        request = Net::HTTP::Post.new(uri.path.empty? ? '/' : uri.path)
+        headers.each { |name, value| request[name] = value }
+        signature.headers.each { |name, value| request[name] = value unless name == 'host' }
+        request['user-agent'] = USER_AGENT
+        request['accept-encoding'] = ''
+        request['accept'] = '*/*'
+        request.body = body
+
+        http = Net::HTTP.new(uri.host, uri.port)
+        http.use_ssl = uri.scheme == 'https'
+        http.open_timeout = @options[:http_open_timeout] || 15
+        http.read_timeout = @options[:http_read_timeout] || 60
+        # One request per session, opened and closed here.
+        http.start
+        begin
+          response = http.request(request)
+        ensure
+          http.finish
+        end
+        xml_or_error(response.code.to_i, response.body.to_s, body)
+      end
+
+      # A 2xx body, or the query protocol's <ErrorResponse> as an error.
+      def xml_or_error(status, xml, body)
+        return xml if status >= 200 && status < 300
+
+        error = Xml.parse(xml)
         detail = error.nil? ? nil : error.child('Error')
         code = Xml.text(detail.nil? ? nil : detail.child('Code')) || "Http#{status}Error"
         message = Xml.text(detail.nil? ? nil : detail.child('Message'))
-        raise ErrorResponse.new(code, context, message)
-      end
-
-      def send_query(_body)
-        raise NotImplementedError, 'calls over the network are not supported yet; ' \
-                                   'use stub_responses: true'
+        raise ErrorResponse.new(code, request_context(body), message)
       end
     end
   end
@@ -263,10 +358,10 @@ module Seahorse
       attr_reader :data, :context
       attr_accessor :error
 
-      def initialize(data, body, retries)
+      def initialize(data, context)
         @data = data
         @error = nil
-        @context = Aws::Runtime::Context.new(body, retries)
+        @context = context
       end
 
       def successful? = @error.nil?

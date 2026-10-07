@@ -35,6 +35,15 @@ rescue Aws::Errors::ServiceError => e
   puts "unknown error: #{e.code} #{e.message}"
 end
 
+%w[AccessDenied Throttling InvalidClientTokenId SignatureDoesNotMatch ValidationError].each do |code|
+  sts.stub_responses(:get_caller_identity, code)
+  begin
+    sts.get_caller_identity
+  rescue Aws::STS::Errors::ServiceError => e
+    puts "common error: #{e.class} #{e.code}"
+  end
+end
+
 xml = <<~XML
   <GetCallerIdentityResponse xmlns="https://sts.amazonaws.com/doc/2011-06-15/">
     <GetCallerIdentityResult>

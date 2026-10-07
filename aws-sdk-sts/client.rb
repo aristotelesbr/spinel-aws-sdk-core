@@ -42,7 +42,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.assume_role(xml)
         end
-        Responses::AssumeRole.new(data, body, @retries)
+        Responses::AssumeRole.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -58,7 +58,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.assume_role_with_saml(xml)
         end
-        Responses::AssumeRoleWithSAML.new(data, body, @retries)
+        Responses::AssumeRoleWithSAML.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -74,7 +74,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.assume_role_with_web_identity(xml)
         end
-        Responses::AssumeRoleWithWebIdentity.new(data, body, @retries)
+        Responses::AssumeRoleWithWebIdentity.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -90,7 +90,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.assume_root(xml)
         end
-        Responses::AssumeRoot.new(data, body, @retries)
+        Responses::AssumeRoot.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -106,7 +106,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.decode_authorization_message(xml)
         end
-        Responses::DecodeAuthorizationMessage.new(data, body, @retries)
+        Responses::DecodeAuthorizationMessage.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -122,7 +122,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_access_key_info(xml)
         end
-        Responses::GetAccessKeyInfo.new(data, body, @retries)
+        Responses::GetAccessKeyInfo.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -138,7 +138,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_caller_identity(xml)
         end
-        Responses::GetCallerIdentity.new(data, body, @retries)
+        Responses::GetCallerIdentity.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -154,7 +154,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_delegated_access_token(xml)
         end
-        Responses::GetDelegatedAccessToken.new(data, body, @retries)
+        Responses::GetDelegatedAccessToken.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -170,7 +170,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_federation_token(xml)
         end
-        Responses::GetFederationToken.new(data, body, @retries)
+        Responses::GetFederationToken.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -186,7 +186,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_session_token(xml)
         end
-        Responses::GetSessionToken.new(data, body, @retries)
+        Responses::GetSessionToken.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
@@ -202,7 +202,7 @@ module Aws
           xml = stub ? stub_xml(stub, body) : send_query(body)
           data = Parsers.get_web_identity_token(xml)
         end
-        Responses::GetWebIdentityToken.new(data, body, @retries)
+        Responses::GetWebIdentityToken.new(data, request_context(body))
       rescue Aws::Runtime::ErrorResponse => e
         raise Errors.error(e.code, e.context, e.message)
       end
