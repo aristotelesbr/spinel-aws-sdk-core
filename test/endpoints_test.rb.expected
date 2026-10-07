@@ -1,0 +1,11 @@
+profile endpoint_url: https://default.example.com
+services section: https://sts-only.example.com
+AWS_ENDPOINT_URL: https://global.example.com
+AWS_ENDPOINT_URL_STS: https://sts-env.example.com
+:endpoint option: https://option.example.com
+ignored: https://sts.us-stubbed-1.amazonaws.com
+ignored by option: https://sts.us-stubbed-1.amazonaws.com
+profile role: Aws::AssumeRoleCredentials ASIAPROFILE
+eks: Aws::AssumeRoleWebIdentityCredentials ASIAEKS
+request: POST / HTTP/1.1 Credential=AKIDBASE Action=AssumeRole
+request: POST / HTTP/1.1 unsigned Action=AssumeRoleWithWebIdentity

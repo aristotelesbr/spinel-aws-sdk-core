@@ -1,4 +1,4 @@
 gem:       aws-sdk-core 3.257.0 (rubygems.org)
 models:    aws/aws-sdk-ruby 1113d9b05fdf26bbf147e4c4936a9e446ae27ad5, apis/
 oracle:    CRuby 4.0.2 with aws-sdk-core 3.257.0 (oracle/Gemfile)
-codegen:   spinel-aws-sdk-codegen 4d0861b (aws-sdk-sts.rb, aws-sdk-sts/)
+codegen:   spinel-aws-sdk-codegen 741ab01 (aws-sdk-sts.rb, aws-sdk-sts/)

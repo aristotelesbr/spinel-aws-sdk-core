@@ -214,10 +214,11 @@ module Aws
       CONTENT_TYPE = 'application/x-www-form-urlencoded; charset=utf-8'
       USER_AGENT = 'aws-sdk-ruby3/3.257.0 ua/2.1 lang/spinel'
 
-      def initialize(options, endpoint_prefix, signing_name)
+      def initialize(options, endpoint_prefix, signing_name, service_id = endpoint_prefix)
         @options = options
         @endpoint_prefix = endpoint_prefix
         @signing_name = signing_name
+        @service_id = service_id
         @retries = 0
         @stubs = {}
         stubs = options[:stub_responses]
@@ -226,21 +227,42 @@ module Aws
         end
         @region = resolve_region
         @credentials = resolve_credentials
+        @configured_endpoint = resolve_configured_endpoint
         resolve_retries
       end
 
       # The gem's RegionalEndpoint#resolve_region: the option, then
       # AWS_REGION, AMAZON_REGION and AWS_DEFAULT_REGION, then the shared
-      # config. With stub_responses and no region, the gem's 'us-stubbed-1'.
+      # config. With stub_responses, the gem's StubResponses region: the
+      # option or 'us-stubbed-1'.
       def resolve_region
         region = @options[:region]
+        return region || 'us-stubbed-1' if stub_responses?
+
         region = ENV.values_at('AWS_REGION', 'AMAZON_REGION', 'AWS_DEFAULT_REGION').compact.first if region.nil?
         region = nil if region == ''
         region = Aws.shared_config.region(profile: @options[:profile]) if region.nil?
-        region = 'us-stubbed-1' if region.nil? && stub_responses?
         raise Aws::Errors::MissingRegionError if region.nil? || region == ''
 
         region
+      end
+
+      # The gem's RegionalEndpoint#resolve_custom_config_endpoint:
+      # AWS_ENDPOINT_URL_<SERVICE ID>, then AWS_ENDPOINT_URL, then the
+      # profile's services section or endpoint_url, unless
+      # ignore_configured_endpoint_urls (option, environment or profile).
+      def resolve_configured_endpoint
+        ignore = @options[:ignore_configured_endpoint_urls]
+        if ignore.nil?
+          value = ENV['AWS_IGNORE_CONFIGURED_ENDPOINT_URLS'] ||
+                  Aws.shared_config.ignore_configured_endpoint_urls(profile: @options[:profile])
+          ignore = !value.nil? && value.downcase == 'true'
+        end
+        return nil if ignore
+
+        ENV["AWS_ENDPOINT_URL_#{@service_id.gsub(' ', '_').upcase}"] ||
+          ENV['AWS_ENDPOINT_URL'] ||
+          Aws.shared_config.configured_endpoint(profile: @options[:profile], service_id: @service_id)
       end
 
       # The gem's CredentialsConfiguration: the :credentials option, then
@@ -256,10 +278,11 @@ module Aws
         Aws::CredentialProviderChain.new.resolve
       end
 
-      # The :endpoint option, or the service's regional endpoint as the
-      # gem's endpoint rules build it.
+      # The :endpoint option, a configured endpoint, or the service's
+      # regional endpoint as the gem's endpoint rules build it.
       def endpoint
         return @options[:endpoint].to_s if @options[:endpoint]
+        return @configured_endpoint unless @configured_endpoint.nil?
         return "https://#{@endpoint_prefix}.amazonaws.com" if @region == 'aws-global'
 
         "https://#{@endpoint_prefix}.#{@region}.#{Runtime.dns_suffix(@region)}"

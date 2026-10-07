@@ -7,9 +7,10 @@ module Aws
     class Client < Aws::Runtime::Client
       ENDPOINT_PREFIX = "sts"
       SIGNING_NAME = "sts"
+      SERVICE_ID = "STS"
 
       def initialize(options = {})
-        super(options, ENDPOINT_PREFIX, SIGNING_NAME)
+        super(options, ENDPOINT_PREFIX, SIGNING_NAME, SERVICE_ID)
       end
 
       # The input member names of an operation, as the gem reads them from
