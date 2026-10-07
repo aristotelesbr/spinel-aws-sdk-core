@@ -4,7 +4,9 @@ require 'stringio'
 require 'uri'
 require 'net/http'
 require 'securerandom'
+require 'openssl'
 require 'aws-sigv4'
+require_relative 'runtime/retries'
 
 # spinel-aws-sdk-core: written for the package, not copied from the gem. The
 # gem builds each call from its API model at run time (Seahorse handlers,
@@ -224,6 +226,7 @@ module Aws
         end
         @region = resolve_region
         @credentials = resolve_credentials
+        resolve_retries
       end
 
       # The gem's RegionalEndpoint#resolve_region: the option, then
@@ -301,15 +304,59 @@ module Aws
         xml_or_error(stub.status_code.to_i, stub.body.to_s, body)
       end
 
-      # Signs the query body with aws-sigv4 and POSTs it to the endpoint, with
-      # the headers the gem sends.
+      # Sends the query body, retrying as the gem's legacy handler (the
+      # default) or standard handler does, and returns the 2xx body or raises
+      # the last error.
       def send_query(body)
-        url = endpoint
+        @retries = 0
+        capacity = nil
+        loop do
+          url = endpoint
+          status, xml, date, network_error = transmit(body, url)
+          server_time = Retries.server_time(date)
+          if network_error.nil? && status >= 200 && status < 300
+            @retry_quota.release(capacity) if @retry_mode == 'standard'
+            return xml
+          end
+
+          code, message = network_error ? [nil, nil] : error_code_and_message(status, xml)
+          name = network_error ? 'Seahorse::Client::NetworkingError' : Runtime.error_constant(code)
+          failure = Retries::Failure.new(name, status, !network_error.nil?, server_time)
+          refreshable = @credentials.respond_to?(:refresh!)
+          if @retry_mode == 'standard'
+            @clock_skew.update_clock_correction(url, server_time) if failure.clock_skew?
+            @clock_skew.update_estimated_skew(url, server_time)
+            retry_now = failure.retryable?(refreshable) && @retries < @max_attempts - 1
+            if retry_now
+              capacity = @retry_quota.checkout_capacity(failure)
+              retry_now = capacity > 0
+            end
+            Runtime.sleep(Kernel.rand * [2**@retries, 20].min) if retry_now
+          else
+            retry_now = failure.retryable?(refreshable) && @retries < @retry_limit
+            Runtime.sleep(2**@retries * @retry_base_delay) if retry_now
+          end
+          unless retry_now
+            raise Seahorse::Client::NetworkingError.new(network_error) if network_error
+
+            raise ErrorResponse.new(code, request_context(body), message)
+          end
+
+          @retries += 1
+          @credentials.refresh! if failure.expired_credentials? && refreshable
+        end
+      end
+
+      # One signed POST: [status, body, Date header, networking error].
+      def transmit(body, url)
         uri = URI.parse(url)
         headers = {
           'content-type' => CONTENT_TYPE,
           'amz-sdk-invocation-id' => SecureRandom.uuid
         }
+        headers['amz-sdk-request'] = sdk_request_header(url) if @retry_mode == 'standard'
+        skew = @correct_clock_skew ? @clock_skew.clock_correction(url) : 0
+        headers['x-amz-date'] = (Time.now.utc + skew).strftime('%Y%m%dT%H%M%SZ') if skew != 0
         signer = Aws::Sigv4::Signer.new(service: @signing_name, region: @region,
                                         credentials_provider: @credentials)
         signature = signer.sign_request(http_method: 'POST', url: url, headers: headers, body: body)
@@ -325,26 +372,112 @@ module Aws
         http = Net::HTTP.new(uri.host, uri.port)
         http.use_ssl = uri.scheme == 'https'
         http.open_timeout = @options[:http_open_timeout] || 15
-        http.read_timeout = @options[:http_read_timeout] || 60
-        # One request per session, opened and closed here.
-        http.start
+        http.read_timeout = @http_read_timeout
         begin
-          response = http.request(request)
-        ensure
-          http.finish
+          # One request per session, opened and closed here.
+          http.start
+          begin
+            response = http.request(request)
+          ensure
+            http.finish
+          end
+        # The gem's Seahorse::Client::NetHttp::Handler::NETWORK_ERRORS;
+        # SocketError (a failed DNS lookup) is matched by name.
+        rescue EOFError, IOError, Timeout::Error,
+               Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE, Errno::EINVAL,
+               Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
+               OpenSSL::SSL::SSLError => e
+          return [0, '', nil, e]
+        rescue StandardError => e
+          raise unless %w[SocketError Socket::ResolutionError].include?(e.class.name)
+
+          return [0, '', nil, e]
         end
-        xml_or_error(response.code.to_i, response.body.to_s, body)
+        [response.code.to_i, response.body.to_s, response['date'], nil]
+      end
+
+      # The gem's standard handler header: the attempt, the maximum, and a
+      # deadline once the endpoint's clock skew has been estimated.
+      def sdk_request_header(url)
+        header = "attempt=#{@retries + 1}; max=#{@max_attempts}"
+        skew = @clock_skew.estimated_skew(url)
+        unless skew.nil?
+          header += "; ttl=#{(Time.now.utc + @http_read_timeout + skew).strftime('%Y%m%dT%H%M%SZ')}"
+        end
+        header
       end
 
       # A 2xx body, or the query protocol's <ErrorResponse> as an error.
       def xml_or_error(status, xml, body)
         return xml if status >= 200 && status < 300
 
+        code, message = error_code_and_message(status, xml)
+        raise ErrorResponse.new(code, request_context(body), message)
+      end
+
+      def error_code_and_message(status, xml)
         error = Xml.parse(xml)
         detail = error.nil? ? nil : error.child('Error')
         code = Xml.text(detail.nil? ? nil : detail.child('Code')) || "Http#{status}Error"
-        message = Xml.text(detail.nil? ? nil : detail.child('Message'))
-        raise ErrorResponse.new(code, request_context(body), message)
+        [code, Xml.text(detail.nil? ? nil : detail.child('Message'))]
+      end
+
+      # The gem's RetryErrors resolution: the option, then the environment,
+      # then the shared config, then the default. Options the package does not
+      # carry raise rather than be ignored.
+      def resolve_retries
+        %i[retry_jitter retry_backoff retry_max_delay adaptive_retry_wait_to_fill].each do |name|
+          raise NotImplementedError, "the :#{name} option is not supported" unless @options[name].nil?
+        end
+        if ENV.fetch('AWS_NEW_RETRIES_2026', 'false').downcase == 'true'
+          raise NotImplementedError, 'AWS_NEW_RETRIES_2026 is not supported'
+        end
+
+        @retry_mode = @options[:retry_mode] || resolve_retry_mode
+        raise NotImplementedError, 'the adaptive retry mode is not supported' if @retry_mode == 'adaptive'
+
+        @max_attempts = @options[:max_attempts] || resolve_max_attempts
+        @retry_limit = @options[:retry_limit] || 3
+        @retry_base_delay = @options[:retry_base_delay] || 0.3
+        @correct_clock_skew = @options[:correct_clock_skew].nil? ? resolve_correct_clock_skew : @options[:correct_clock_skew]
+        @http_read_timeout = @options[:http_read_timeout] || 60
+        @retry_quota = Retries::Quota.new
+        @clock_skew = Retries::ClockSkew.new
+      end
+
+      def resolve_retry_mode
+        value = ENV['AWS_RETRY_MODE'] || Aws.shared_config.retry_mode(profile: @options[:profile]) || 'legacy'
+        if value != 'legacy' && value != 'standard' && value != 'adaptive'
+          raise ArgumentError,
+                'Must provide either `legacy`, `standard`, or `adaptive` for '\
+                'retry_mode profile option or for ENV[\'AWS_RETRY_MODE\']'
+        end
+        value
+      end
+
+      def resolve_max_attempts
+        value = ENV['AWS_MAX_ATTEMPTS'] || Aws.shared_config.max_attempts(profile: @options[:profile])
+        return 3 if value.nil?
+
+        value = value.to_i
+        if value <= 0
+          raise ArgumentError,
+                'Must provide a positive integer for max_attempts profile '\
+                'option or for ENV[\'AWS_MAX_ATTEMPTS\']'
+        end
+        value
+      end
+
+      def resolve_correct_clock_skew
+        value = ENV['AWS_CORRECT_CLOCK_SKEW'] ||
+                Aws.shared_config.correct_clock_skew(profile: @options[:profile]) || 'true'
+        if value != 'true' && value != 'false'
+          raise ArgumentError,
+                'Must provide either `true` or `false` for '\
+                'correct_clock_skew profile option or for '\
+                'ENV[\'AWS_CORRECT_CLOCK_SKEW\']'
+        end
+        value == 'true'
       end
     end
   end
