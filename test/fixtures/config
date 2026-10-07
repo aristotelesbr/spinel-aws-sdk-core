@@ -1,0 +1,7 @@
+[default]
+region = sa-east-1
+max_attempts = 5
+retry_mode = standard
+
+[profile dev]
+region = eu-west-1

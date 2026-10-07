@@ -210,41 +210,140 @@ module Aws
       end
     end
 
-    config_reader(
-      :region,
-      :account_id_endpoint_mode,
-      :auth_scheme_preference,
-      :sigv4a_signing_region_set,
-      :ca_bundle,
-      :credential_process,
-      :endpoint_discovery_enabled,
-      :use_dualstack_endpoint,
-      :use_fips_endpoint,
-      :ec2_metadata_service_endpoint,
-      :ec2_metadata_service_endpoint_mode,
-      :ec2_metadata_v1_disabled,
-      :disable_host_prefix_injection,
-      :max_attempts,
-      :retry_mode,
-      :adaptive_retry_wait_to_fill,
-      :correct_clock_skew,
-      :request_checksum_calculation,
-      :response_checksum_validation,
-      :csm_client_id,
-      :csm_enabled,
-      :csm_host,
-      :csm_port,
-      :sts_regional_endpoints,
-      :s3_use_arn_region,
-      :s3_us_east_1_regional_endpoint,
-      :s3_disable_multiregion_access_points,
-      :s3_disable_express_session_auth,
-      :defaults_mode,
-      :sdk_ua_app_id,
-      :disable_request_compression,
-      :request_min_compression_size_bytes,
-      :ignore_configured_endpoint_urls
-    )
+    # spinel-aws-sdk-core: the gem's config_reader defines these 33 readers
+    # in a loop; under Spinel each one is written out, same names, same order
+    # and same body.
+    def region(opts = {})
+      get_config_value('region', opts)
+    end
+
+    def account_id_endpoint_mode(opts = {})
+      get_config_value('account_id_endpoint_mode', opts)
+    end
+
+    def auth_scheme_preference(opts = {})
+      get_config_value('auth_scheme_preference', opts)
+    end
+
+    def sigv4a_signing_region_set(opts = {})
+      get_config_value('sigv4a_signing_region_set', opts)
+    end
+
+    def ca_bundle(opts = {})
+      get_config_value('ca_bundle', opts)
+    end
+
+    def credential_process(opts = {})
+      get_config_value('credential_process', opts)
+    end
+
+    def endpoint_discovery_enabled(opts = {})
+      get_config_value('endpoint_discovery_enabled', opts)
+    end
+
+    def use_dualstack_endpoint(opts = {})
+      get_config_value('use_dualstack_endpoint', opts)
+    end
+
+    def use_fips_endpoint(opts = {})
+      get_config_value('use_fips_endpoint', opts)
+    end
+
+    def ec2_metadata_service_endpoint(opts = {})
+      get_config_value('ec2_metadata_service_endpoint', opts)
+    end
+
+    def ec2_metadata_service_endpoint_mode(opts = {})
+      get_config_value('ec2_metadata_service_endpoint_mode', opts)
+    end
+
+    def ec2_metadata_v1_disabled(opts = {})
+      get_config_value('ec2_metadata_v1_disabled', opts)
+    end
+
+    def disable_host_prefix_injection(opts = {})
+      get_config_value('disable_host_prefix_injection', opts)
+    end
+
+    def max_attempts(opts = {})
+      get_config_value('max_attempts', opts)
+    end
+
+    def retry_mode(opts = {})
+      get_config_value('retry_mode', opts)
+    end
+
+    def adaptive_retry_wait_to_fill(opts = {})
+      get_config_value('adaptive_retry_wait_to_fill', opts)
+    end
+
+    def correct_clock_skew(opts = {})
+      get_config_value('correct_clock_skew', opts)
+    end
+
+    def request_checksum_calculation(opts = {})
+      get_config_value('request_checksum_calculation', opts)
+    end
+
+    def response_checksum_validation(opts = {})
+      get_config_value('response_checksum_validation', opts)
+    end
+
+    def csm_client_id(opts = {})
+      get_config_value('csm_client_id', opts)
+    end
+
+    def csm_enabled(opts = {})
+      get_config_value('csm_enabled', opts)
+    end
+
+    def csm_host(opts = {})
+      get_config_value('csm_host', opts)
+    end
+
+    def csm_port(opts = {})
+      get_config_value('csm_port', opts)
+    end
+
+    def sts_regional_endpoints(opts = {})
+      get_config_value('sts_regional_endpoints', opts)
+    end
+
+    def s3_use_arn_region(opts = {})
+      get_config_value('s3_use_arn_region', opts)
+    end
+
+    def s3_us_east_1_regional_endpoint(opts = {})
+      get_config_value('s3_us_east_1_regional_endpoint', opts)
+    end
+
+    def s3_disable_multiregion_access_points(opts = {})
+      get_config_value('s3_disable_multiregion_access_points', opts)
+    end
+
+    def s3_disable_express_session_auth(opts = {})
+      get_config_value('s3_disable_express_session_auth', opts)
+    end
+
+    def defaults_mode(opts = {})
+      get_config_value('defaults_mode', opts)
+    end
+
+    def sdk_ua_app_id(opts = {})
+      get_config_value('sdk_ua_app_id', opts)
+    end
+
+    def disable_request_compression(opts = {})
+      get_config_value('disable_request_compression', opts)
+    end
+
+    def request_min_compression_size_bytes(opts = {})
+      get_config_value('request_min_compression_size_bytes', opts)
+    end
+
+    def ignore_configured_endpoint_urls(opts = {})
+      get_config_value('ignore_configured_endpoint_urls', opts)
+    end
 
     private
 
@@ -290,7 +389,8 @@ module Aws
               metrics << 'CREDENTIALS_PROFILE_SOURCE_PROFILE'
             end
             # Set the original credentials metrics to [] to prevent duplicate metrics during sign plugin
-            opts[:credentials].metrics = []
+            # spinel-aws-sdk-core: an empty Array of Strings, as metrics holds.
+            opts[:credentials].metrics = Array.new(0, '')
             with_metrics(metrics) do
               creds = AssumeRoleCredentials.new(opts)
               creds.metrics.push(*metrics)
@@ -315,7 +415,8 @@ module Aws
             metrics = opts[:credentials].metrics
             metrics << 'CREDENTIALS_PROFILE_NAMED_PROVIDER'
             # Set the original credentials metrics to [] to prevent duplicate metrics during sign plugin
-            opts[:credentials].metrics = []
+            # spinel-aws-sdk-core: an empty Array of Strings, as metrics holds.
+            opts[:credentials].metrics = Array.new(0, '')
             with_metrics(metrics) do
               creds = AssumeRoleCredentials.new(opts)
               creds.metrics.push(*metrics)

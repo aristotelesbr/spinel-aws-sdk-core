@@ -9,8 +9,11 @@ CDPATH= cd "$(dirname "$0")/.."
 export BUNDLE_GEMFILE="$PWD/oracle/Gemfile"
 SPIN=${SPIN:-spin}
 INCLUDES=$("$SPIN" flags | sed 's/--require-gate//')
+# base64 is a bundled gem in Ruby 4, so --disable-gems hides it; the
+# package run sees it, and nothing else from the bundle, through its path.
+BASE64_LIB=$(mise exec ruby@4.0.2 -- bundle exec ruby -e 'print Gem.loaded_specs["base64"].full_gem_path + "/lib"')
 ruby_gem() { mise exec ruby@4.0.2 -- bundle exec ruby "$1"; }
-ruby_pkg() { mise exec ruby@4.0.2 -- ruby --disable-gems $INCLUDES "$1"; }
+ruby_pkg() { mise exec ruby@4.0.2 -- ruby --disable-gems $INCLUDES -I "$BASE64_LIB" "$1"; }
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT

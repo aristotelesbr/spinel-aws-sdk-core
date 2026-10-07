@@ -267,12 +267,10 @@ Known AWS regions include (not specific to this service):
 
       private
 
+      # spinel-aws-sdk-core: the package does not carry aws-partitions, so
+      # the message lists no regions.
       def possible_regions
-        Aws.partitions.each_with_object([]) do |partition, region_names|
-          partition.regions.each do |region|
-            region_names << region.name
-          end
-        end.join("\n")
+        ''
       end
     end
 
@@ -316,12 +314,10 @@ Known AWS regions include (not specific to this service):
 
       private
 
+      # spinel-aws-sdk-core: the package does not carry aws-partitions, so
+      # the message lists no regions.
       def possible_regions
-        Aws.partitions.each_with_object([]) do |partition, region_names|
-          partition.regions.each do |region|
-            region_names << region.name
-          end
-        end.join("\n")
+        ''
       end
     end
 
