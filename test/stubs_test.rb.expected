@@ -1,0 +1,12 @@
+default: accountType arnType userIdType
+data: Aws::STS::Types::GetCallerIdentityResponse {user_id: "userIdType", account: "accountType", arn: "arnType"}
+successful: true nil
+assume_role: accessKeyIdType Time 0
+user: arnType
+hash: 123456789012 arn:aws:iam::123456789012:user/ari nil
+sequence: 111 222 222
+error: Aws::STS::Errors::ExpiredTokenException ExpiredTokenException stubbed-response-error-message
+unknown error: SomethingNew stubbed-response-error-message
+xml: 123456789012 arn:aws:iam::123456789012:user/ari AIDAEXAMPLE
+xml error: AccessDenied User is not authorized & denied
+body: Action=AssumeRole&DurationSeconds=900&PolicyArns.member.1.arn=arn%3Aa&PolicyArns.member.2.arn=arn%3Ab&RoleArn=arn%3Aaws%3Aiam%3A%3A123456789012%3Arole%2Fapp&RoleSessionName=app&Tags.member.1.Key=team&Tags.member.1.Value=core&Version=2011-06-15

@@ -83,10 +83,9 @@ module Aws
 
       # @api private
       def assume_role_options
-        @aro ||= begin
-          input = STS::Client.api.operation(:assume_role).input
-          Set.new(input.shape.member_names)
-        end
+        # spinel-aws-sdk-core: the generated client lists each operation's
+        # input members; the gem reads them from its API model.
+        @aro ||= Set.new(STS::Client.input_members(:assume_role))
       end
 
     end

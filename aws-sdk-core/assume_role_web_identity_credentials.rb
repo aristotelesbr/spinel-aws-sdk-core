@@ -105,10 +105,9 @@ module Aws
 
       # @api private
       def assume_role_web_identity_options
-        @arwio ||= begin
-          input = Aws::STS::Client.api.operation(:assume_role_with_web_identity).input
-          Set.new(input.shape.member_names)
-        end
+        # spinel-aws-sdk-core: the generated client lists each operation's
+        # input members; the gem reads them from its API model.
+        @arwio ||= Set.new(Aws::STS::Client.input_members(:assume_role_with_web_identity))
       end
     end
   end

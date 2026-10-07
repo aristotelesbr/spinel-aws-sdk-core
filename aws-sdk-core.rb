@@ -14,6 +14,7 @@ require_relative 'aws-sdk-core/shared_config'
 require_relative 'aws-sdk-core/assume_role_credentials'
 require_relative 'aws-sdk-core/assume_role_web_identity_credentials'
 require_relative 'aws-sdk-core/credential_provider_chain'
+require_relative 'aws-sdk-core/runtime'
 
 module Aws
   class << self
@@ -26,3 +27,6 @@ module Aws
 
   end
 end
+
+# aws-sdk-sts is included to support Aws::AssumeRoleCredentials
+require_relative 'aws-sdk-sts'

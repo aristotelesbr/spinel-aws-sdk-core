@@ -14,8 +14,11 @@ module Aws
       # @param [Seahorse::Client::RequestContext] context
       # @param [String, nil] message
       # @param [Aws::Structure] data
-      def initialize(context, message, data = Aws::EmptyStructure.new)
-        @code = self.class.code
+      # spinel-aws-sdk-core: the gem sets each error class's code when
+      # DynamicErrors creates or finds the class; here the classes are
+      # generated, and Errors.error passes the code in.
+      def initialize(context, message, data = Aws::EmptyStructure.new, code = self.class.code)
+        @code = code
         @context = context
         @data = data
         @message = message && !message.empty? ? message : self.class.to_s
