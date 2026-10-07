@@ -1,0 +1,6 @@
+AWS SDK for Ruby
+Copyright Amazon.com, Inc. or its affiliates. All Rights Reserved.
+
+This package is a port of the aws-sdk-core gem 3.257.0 to Spinel. The files
+were copied from the gem and modified where they say
+"# spinel-aws-sdk-core:"; see the README for each change.
