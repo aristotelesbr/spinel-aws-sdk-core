@@ -16,8 +16,9 @@ module Aws
       # @param [Aws::Structure] data
       # spinel-aws-sdk-core: the gem sets each error class's code when
       # DynamicErrors creates or finds the class; here the classes are
-      # generated, and Errors.error passes the code in.
-      def initialize(context, message, data = Aws::EmptyStructure.new, code = self.class.code)
+      # generated, and Errors.error passes the code in. Nothing sets a class's
+      # code, so the default is nil rather than self.class.code.
+      def initialize(context, message, data = Aws::EmptyStructure.new, code = nil)
         @code = code
         @context = context
         @data = data

@@ -52,7 +52,7 @@ The package has three parts:
 | Where | The gem | Here | Why |
 |---|---|---|---|
 | `aws-sdk-core.rb` | autoloads every part, Seahorse, aws-partitions and jmespath | requires the parts the package carries | the package carries what the client needs |
-| `errors.rb`, `ServiceError#initialize` | `DynamicErrors` creates a class per error code at run time | error classes are generated; the code is passed in | a compiled program defines its classes ahead of time |
+| `errors.rb`, `ServiceError#initialize` | `DynamicErrors` creates a class per error code at run time and sets its code | error classes are generated; the code is passed in, and defaults to nil | a compiled program defines its classes ahead of time |
 | `errors.rb`, `possible_regions` | lists the regions from aws-partitions | empty | the package does not carry aws-partitions |
 | `refreshing_credentials.rb` | `self.class::SYNC_EXPIRATION_LENGTH` and `ASYNC_` | the module's constants | the gem's form does not run under Spinel yet |
 | `shared_config.rb` | `config_reader` defines 33 readers | the 33 readers written out | a compiled program defines its methods ahead of time |
