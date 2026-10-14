@@ -1,6 +1,6 @@
 [package]
 name = "aws-sdk-core"
-version = "0.1.4"
+version = "0.1.5"
 
 [dependencies]
 aws-sigv4 = { git = "https://github.com/aristotelesbr/spinel-aws-sigv4" }
