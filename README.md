@@ -34,16 +34,17 @@ The package has three parts:
   credential files from aws-sdk-core 3.257.0: credentials and their
   providers, the provider chain, the shared config and credentials files,
   assume role, web identity, ARNs and errors. `git diff bc827be` (the
-  commit that adds them verbatim) shows every change. Each change is marked
+  commit that adds them verbatim) shows every change. `waiters/errors.rb`
+  is the gem's too, unchanged. Each change is marked
   `# spinel-aws-sdk-core:` in place.
 - **A generated client.** The gem builds its clients at run time from each
   service's API model. Here `aws-sdk-sts.rb` and `aws-sdk-sts/` are
   generated ahead of time from the same model (`apis/sts/2011-06-15` in
   aws-sdk-ruby), as plain Ruby: types, errors, serializers, parsers, stubs
   and the client. `UPSTREAM` names the model and generator versions.
-- **A small runtime.** `aws-sdk-core/runtime.rb`,
-  `aws-sdk-core/runtime/retries.rb` and `aws-sdk-core/runtime/json.rb` are
-  written for the package. They do what the gem's request handlers do for a
+- **A small runtime.** `aws-sdk-core/runtime.rb` and
+  `aws-sdk-core/runtime/` (retries, JSON, the waiter loop) are written for
+  the package. They do what the gem's request handlers do for a
   query-protocol service (STS) and a JSON-protocol service (such as
   [SSM](https://github.com/aristotelesbr/spinel-aws-sdk-ssm)): resolve the
   region, credentials and endpoint, sign with SigV4, send over `Net::HTTP`,
@@ -69,6 +70,7 @@ The runtime follows the gem's behaviour for:
 - unsigned operations;
 - `stub_responses`;
 - paging (`each_page`, `next_page`, `last_page?`) for a paginator of one token;
+- waiters (`Aws::Waiters::Waiter` and its errors), for a generated waiter class;
 - error classes, including common AWS errors the model does not list;
 - the `legacy` (default) and `standard` retry modes, with the retry quota and clock skew correction.
 

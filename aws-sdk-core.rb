@@ -17,6 +17,8 @@ require_relative 'aws-sdk-core/assume_role_credentials'
 require_relative 'aws-sdk-core/assume_role_web_identity_credentials'
 require_relative 'aws-sdk-core/credential_provider_chain'
 require_relative 'aws-sdk-core/runtime'
+require_relative 'aws-sdk-core/waiters/errors'
+require_relative 'aws-sdk-core/runtime/waiter'
 
 module Aws
   class << self
