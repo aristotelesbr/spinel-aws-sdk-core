@@ -3,17 +3,21 @@
 # .expected: once with the real aws-sdk-core gem (the oracle) and once with this
 # package and its spin dependencies. With --write, regenerates every .expected
 # from the real gem. A run counts only if ruby exits 0; stdout alone is compared.
-# SPIN names the spin binary (default: spin on PATH).
+# SPIN names the spin binary (default: spin on PATH). RUBY names the ruby
+# to run (default: Ruby 4.0.2 through mise).
 set -eu
 CDPATH= cd "$(dirname "$0")/.."
 export BUNDLE_GEMFILE="$PWD/oracle/Gemfile"
 SPIN=${SPIN:-spin}
+cruby() {
+  if [ -n "${RUBY:-}" ]; then "$RUBY" "$@"; else mise exec ruby@4.0.2 -- ruby "$@"; fi
+}
 INCLUDES=$("$SPIN" flags | sed 's/--require-gate//')
 # base64 is a bundled gem in Ruby 4, so --disable-gems hides it; the
 # package run sees it, and nothing else from the bundle, through its path.
-BASE64_LIB=$(mise exec ruby@4.0.2 -- bundle exec ruby -e 'print Gem.loaded_specs["base64"].full_gem_path + "/lib"')
-ruby_gem() { mise exec ruby@4.0.2 -- bundle exec ruby "$1"; }
-ruby_pkg() { mise exec ruby@4.0.2 -- ruby --disable-gems $INCLUDES -I "$BASE64_LIB" "$1"; }
+BASE64_LIB=$(cruby -rbundler/setup -e 'print Gem.loaded_specs["base64"].full_gem_path + "/lib"')
+ruby_gem() { cruby -rbundler/setup "$1"; }
+ruby_pkg() { cruby --disable-gems $INCLUDES -I "$BASE64_LIB" "$1"; }
 
 tmp=$(mktemp)
 trap 'rm -f "$tmp"' EXIT

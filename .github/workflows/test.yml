@@ -1,0 +1,78 @@
+name: Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  # Spinel master moves daily; this run says when it stops compiling the package
+  schedule:
+    - cron: "0 6 * * *"
+  workflow_dispatch:
+
+env:
+  # The Spinel revision this package is tested with, see README.md
+  SPINEL_REVISION: 1659748955ebe9aaf9c91fad62609c852996e4ea
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        runner:
+          - ubuntu-24.04
+          - macos-15
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Choose Spinel revision
+        id: spinel
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = schedule ]; then
+            revision=$(git ls-remote https://github.com/matz/spinel refs/heads/master | cut -f1)
+          else
+            revision=$SPINEL_REVISION
+          fi
+          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+
+      # Outside the checkout, or spin test would take Spinel's own sources as the package's
+      - name: Restore Spinel
+        id: spinel-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/spinel-toolchain
+          key: spinel-${{ runner.os }}-${{ runner.arch }}-${{ steps.spinel.outputs.revision }}
+
+      - name: Build Spinel
+        if: steps.spinel-cache.outputs.cache-hit != 'true'
+        env:
+          REVISION: ${{ steps.spinel.outputs.revision }}
+        run: |
+          git clone --filter=blob:none https://github.com/matz/spinel ~/spinel-toolchain
+          cd ~/spinel-toolchain
+          git checkout --quiet "$REVISION"
+          make deps
+          make -j"$(getconf _NPROCESSORS_ONLN)"
+
+      - run: echo "$HOME/spinel-toolchain/bin" >> "$GITHUB_PATH"
+
+      # The openssl package links libssl, which Homebrew keeps out of the default search path
+      - name: Find OpenSSL
+        if: runner.os == 'macOS'
+        run: echo "LIBRARY_PATH=$(brew --prefix openssl@3)/lib" >> "$GITHUB_ENV"
+
+      - name: Spin test
+        run: spin test
+
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "4.0.2"
+
+      - name: Oracle
+        env:
+          RUBY: ruby
+          BUNDLE_GEMFILE: ${{ github.workspace }}/oracle/Gemfile
+        run: |
+          bundle install
+          sh oracle/run.sh
