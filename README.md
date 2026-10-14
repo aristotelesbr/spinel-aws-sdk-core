@@ -106,7 +106,7 @@ The tests cover:
 - `assume_role_test.rb`: assume role and web identity;
 - `endpoints_test.rb`: configured endpoints.
 
-Every `.expected` is the real gem's output. Tested with Spinel `5294fcba7`.
+Every `.expected` is the real gem's output. Tested with Spinel `9a121acc5`.
 
 ## License
 
