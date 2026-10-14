@@ -69,6 +69,24 @@ module Aws
         unknown
       end
 
+      # Json::ErrorHandler#parse_error_data: the error body as a Hash for the
+      # modeled error's parser, or nil when it is not a JSON object.
+      def self.error_body(body)
+        json = nil
+        begin
+          json = JSON.parse(body)
+        rescue JSON::ParserError
+          return nil
+        end
+        json.is_a?(Hash) ? json : nil
+      end
+
+      # The modeled error shape name a code matches, as
+      # Json::ErrorHandler#parse_error_data compares them.
+      def self.error_shape_name(code)
+        code.to_s.gsub(/[^^a-zA-Z0-9]/, '')
+      end
+
       # Json::ErrorHandler#extract_error: the code from __type, then code,
       # then the x-amzn-errortype header, cut at '#' and ':'
       # ("com.amazonaws.ssm#ParameterNotFound" is ParameterNotFound), else

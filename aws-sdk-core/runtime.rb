@@ -26,11 +26,13 @@ module Aws
     # A service error read from the wire or from a stub, before the service's
     # Errors.error turns it into the class for its code.
     class ErrorResponse < StandardError
-      attr_reader :code, :context
+      attr_reader :code, :context, :body
 
-      def initialize(code, context, message)
+      # body is the response body the error came in, for the error's data.
+      def initialize(code, context, message, body = '')
         @code = code
         @context = context
+        @body = body
         super(message)
       end
     end
@@ -329,14 +331,19 @@ module Aws
       end
 
       # The body JSON of a raw HTTP stub, or the error it describes.
+      # An error code stub is the gem's Stubbing::Protocols::Json#stub_error
+      # body, so its data is parsed from that body, as in the gem.
       def stub_json(stub, body)
-        raise ErrorResponse.new(stub.error_code, request_context(body), STUB_ERROR_MESSAGE) if stub.error?
+        if stub.error?
+          error = JSON.generate({ 'code' => stub.error_code, 'message' => STUB_ERROR_MESSAGE })
+          raise ErrorResponse.new(stub.error_code, request_context(body), STUB_ERROR_MESSAGE, error)
+        end
 
         status = stub.status_code.to_i
         return stub.body.to_s if status >= 200 && status < 300
 
         code, message = Json.error_code_and_message(status, stub.body.to_s, nil)
-        raise ErrorResponse.new(code, request_context(body), message)
+        raise ErrorResponse.new(code, request_context(body), message, stub.body.to_s)
       end
 
       # Sends the query body, signed unless the operation is unauthenticated,
@@ -391,7 +398,7 @@ module Aws
           unless retry_now
             raise Seahorse::Client::NetworkingError.new(network_error) if network_error
 
-            raise ErrorResponse.new(code, request_context(body), message)
+            raise ErrorResponse.new(code, request_context(body), message, reply)
           end
 
           @retries += 1
