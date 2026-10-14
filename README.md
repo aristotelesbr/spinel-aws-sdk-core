@@ -57,7 +57,6 @@ The package has three parts:
 | `aws-sdk-core.rb` | autoloads every part, Seahorse, aws-partitions and jmespath | requires the parts the package carries | the package carries what the client needs |
 | `errors.rb`, `ServiceError#initialize` | `DynamicErrors` creates a class per error code at run time and sets its code | error classes are generated; the code is passed in, and defaults to nil | a compiled program defines its classes ahead of time |
 | `errors.rb`, `possible_regions` | lists the regions from aws-partitions | empty | the package does not carry aws-partitions |
-| `refreshing_credentials.rb` | `self.class::SYNC_EXPIRATION_LENGTH` and `ASYNC_` | the module's constants | the gem's form does not run under Spinel yet |
 | `shared_config.rb` | `config_reader` defines 33 readers | the 33 readers written out | a compiled program defines its methods ahead of time |
 | `shared_config.rb`, `credential_provider_chain.rb` | `with_metrics` records User-Agent metrics | runs its block | the package does not build the User-Agent metrics |
 | `assume_role*_credentials.rb` | reads the operation's members from the API model | `STS::Client.input_members` | the model is not loaded at run time |

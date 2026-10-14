@@ -389,8 +389,7 @@ module Aws
               metrics << 'CREDENTIALS_PROFILE_SOURCE_PROFILE'
             end
             # Set the original credentials metrics to [] to prevent duplicate metrics during sign plugin
-            # spinel-aws-sdk-core: an empty Array of Strings, as metrics holds.
-            opts[:credentials].metrics = Array.new(0, '')
+            opts[:credentials].metrics = []
             with_metrics(metrics) do
               creds = AssumeRoleCredentials.new(opts)
               creds.metrics.push(*metrics)
@@ -415,8 +414,7 @@ module Aws
             metrics = opts[:credentials].metrics
             metrics << 'CREDENTIALS_PROFILE_NAMED_PROVIDER'
             # Set the original credentials metrics to [] to prevent duplicate metrics during sign plugin
-            # spinel-aws-sdk-core: an empty Array of Strings, as metrics holds.
-            opts[:credentials].metrics = Array.new(0, '')
+            opts[:credentials].metrics = []
             with_metrics(metrics) do
               creds = AssumeRoleCredentials.new(opts)
               creds.metrics.push(*metrics)

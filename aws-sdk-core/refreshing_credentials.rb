@@ -44,15 +44,12 @@ module Aws
 
     private
 
-    # spinel-aws-sdk-core: the module's constant, read directly; every
-    # class in the package that includes the module keeps its value.
     def sync_expiration_length
-      SYNC_EXPIRATION_LENGTH
+      self.class::SYNC_EXPIRATION_LENGTH
     end
 
-    # spinel-aws-sdk-core: as in sync_expiration_length.
     def async_expiration_length
-      ASYNC_EXPIRATION_LENGTH
+      self.class::ASYNC_EXPIRATION_LENGTH
     end
 
     # Refreshes credentials asynchronously and synchronously.
