@@ -58,6 +58,17 @@ module Aws
         [value.to_s].pack('m0')
       end
 
+      # Json::Parser#structure: in a union, a key the model does not list
+      # (other than __type) is kept as {"name" => key, "value" => value},
+      # the last such key winning.
+      def self.union_unknown(value, known)
+        unknown = nil
+        value.each do |key, item|
+          unknown = { 'name' => key.to_s, 'value' => item } unless known.include?(key.to_s) || key.to_s == '__type'
+        end
+        unknown
+      end
+
       # Json::ErrorHandler#extract_error: the code from __type, then code,
       # then the x-amzn-errortype header, cut at '#' and ':'
       # ("com.amazonaws.ssm#ParameterNotFound" is ParameterNotFound), else
