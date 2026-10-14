@@ -548,21 +548,91 @@ module Aws
   end
 end
 
+module Aws
+  # The gem's PageableResponse, whose paging the response classes carry.
+  module PageableResponse
+    class LastPageError < RuntimeError
+      def initialize(response)
+        @response = response
+        super('unable to fetch next page, end of results reached')
+      end
+
+      attr_reader :response
+    end
+  end
+
+  module Runtime
+    # The gem's Pager for a paginator of one token (SSM's NextToken): the
+    # response is truncated when it has a token and the token is not the one
+    # the request sent, and the next page sends the caller's params with the
+    # new token, then the params given to next_page.
+    module Paging
+      def self.truncated?(next_token, previous_token)
+        return false if next_token.nil? || next_token == ''
+
+        previous_token.nil? || previous_token == '' || next_token != previous_token
+      end
+
+      def self.next_params(original, name, token, params)
+        out = original.reject { |key, _| key == name }
+        out[name] = token
+        params.each { |key, value| out[key] = value }
+        out
+      end
+    end
+  end
+end
+
 module Seahorse
   module Client
     # The gem's response delegates to its data through Delegator; here each
-    # generated operation subclasses it with one reader per member.
+    # generated operation subclasses it with one reader per member. Paging is
+    # the gem's PageableResponse with its NullPager: one page, unless the
+    # operation's class (generated from its paginator) has more.
     class Response
       attr_reader :data, :context
       attr_accessor :error
 
-      def initialize(data, context)
+      # client and params are the call's, for the next page.
+      def initialize(data, context, client = nil, params = {})
         @data = data
         @error = nil
         @context = context
+        @client = client
+        @params = params
       end
 
       def successful? = @error.nil?
+
+      def last_page? = true
+
+      def next_page? = !last_page?
+
+      def next_page(params = {})
+        raise Aws::PageableResponse::LastPageError.new(self) if last_page?
+
+        next_response(params)
+      end
+
+      # This page, then each next one; nil, as the gem's.
+      def each_page
+        response = self
+        yield response
+        until response.last_page?
+          response = response.next_page
+          yield response
+        end
+      end
+
+      def each
+        each_page { |page| yield page }
+      end
+
+      private
+
+      def next_response(_params)
+        raise Aws::PageableResponse::LastPageError.new(self)
+      end
     end
   end
 end

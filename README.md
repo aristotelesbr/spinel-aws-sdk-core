@@ -68,6 +68,7 @@ The runtime follows the gem's behaviour for:
 - configured endpoints (`AWS_ENDPOINT_URL*`, `endpoint_url` and `services`);
 - unsigned operations;
 - `stub_responses`;
+- paging (`each_page`, `next_page`, `last_page?`) for a paginator of one token;
 - error classes, including common AWS errors the model does not list;
 - the `legacy` (default) and `standard` retry modes, with the retry quota and clock skew correction.
 
