@@ -41,11 +41,13 @@ The package has three parts:
   generated ahead of time from the same model (`apis/sts/2011-06-15` in
   aws-sdk-ruby), as plain Ruby: types, errors, serializers, parsers, stubs
   and the client. `UPSTREAM` names the model and generator versions.
-- **A small runtime.** `aws-sdk-core/runtime.rb` and
-  `aws-sdk-core/runtime/retries.rb` are written for the package. They do
-  what the gem's request handlers do for a query-protocol service: resolve
-  the region, credentials and endpoint, sign with SigV4, send over
-  `Net::HTTP`, parse the XML, raise the service's errors, retry, and stub.
+- **A small runtime.** `aws-sdk-core/runtime.rb`,
+  `aws-sdk-core/runtime/retries.rb` and `aws-sdk-core/runtime/json.rb` are
+  written for the package. They do what the gem's request handlers do for a
+  query-protocol service (STS) and a JSON-protocol service (such as
+  [SSM](https://github.com/aristotelesbr/spinel-aws-sdk-ssm)): resolve the
+  region, credentials and endpoint, sign with SigV4, send over `Net::HTTP`,
+  read the XML or JSON, raise the service's errors, retry, and stub.
 
 ## What was rewritten, and why
 
@@ -71,7 +73,8 @@ The runtime follows the gem's behaviour for:
 
 ## Known gaps
 
-- The client is STS. Other services need their own generated client.
+- The package's own client is STS. Other services are their own packages,
+  each with a generated client.
 - The credential chain carries static, environment, shared files, assume
   role and web identity credentials. With none of these set, set
   `AWS_EC2_METADATA_DISABLED=true` so the chain ends without looking for

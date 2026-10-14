@@ -7,6 +7,7 @@ require 'securerandom'
 require 'openssl'
 require 'aws-sigv4'
 require_relative 'runtime/retries'
+require_relative 'runtime/json'
 
 # spinel-aws-sdk-core: written for the package, not copied from the gem. The
 # gem builds each call from its API model at run time (Seahorse handlers,
@@ -327,22 +328,50 @@ module Aws
         xml_or_error(stub.status_code.to_i, stub.body.to_s, body)
       end
 
+      # The body JSON of a raw HTTP stub, or the error it describes.
+      def stub_json(stub, body)
+        raise ErrorResponse.new(stub.error_code, request_context(body), STUB_ERROR_MESSAGE) if stub.error?
+
+        status = stub.status_code.to_i
+        return stub.body.to_s if status >= 200 && status < 300
+
+        code, message = Json.error_code_and_message(status, stub.body.to_s, nil)
+        raise ErrorResponse.new(code, request_context(body), message)
+      end
+
       # Sends the query body, signed unless the operation is unauthenticated,
-      # retrying as the gem's legacy handler (the default) or standard handler
-      # does, and returns the 2xx body or raises the last error.
+      # and returns the 2xx XML or raises the error.
       def send_query(body, signed = true)
+        send_request(body, signed, nil, nil)
+      end
+
+      # Sends a JSON-protocol body to the operation target
+      # ("AmazonSSM.GetParameter"), as the gem's Json::Handler does, and
+      # returns the 2xx JSON or raises the error.
+      def send_json(target, json_version, body, signed = true)
+        send_request(body, signed, target, json_version)
+      end
+
+      # One call, retried as the gem's legacy handler (the default) or
+      # standard handler does: the 2xx body, or the last error raised. A nil
+      # target is the query protocol.
+      def send_request(body, signed, target, json_version)
         @retries = 0
         capacity = nil
         loop do
           url = endpoint
-          status, xml, date, network_error = transmit(body, url, signed)
+          status, reply, date, error_type, network_error = transmit(body, url, signed, target, json_version)
           server_time = Retries.server_time(date)
           if network_error.nil? && status >= 200 && status < 300
             @retry_quota.release(capacity) if @retry_mode == 'standard'
-            return xml
+            return reply
           end
 
-          code, message = network_error ? [nil, nil] : error_code_and_message(status, xml)
+          code, message =
+            if network_error then [nil, nil]
+            elsif target.nil? then error_code_and_message(status, reply)
+            else Json.error_code_and_message(status, reply, error_type)
+            end
           name = network_error ? 'Seahorse::Client::NetworkingError' : Runtime.error_constant(code)
           failure = Retries::Failure.new(name, status, !network_error.nil?, server_time)
           refreshable = !@credentials.nil? && @credentials.respond_to?(:refresh!)
@@ -370,13 +399,16 @@ module Aws
         end
       end
 
-      # One POST: [status, body, Date header, networking error].
-      def transmit(body, url, signed)
+      # One POST: [status, body, Date header, x-amzn-errortype header,
+      # networking error]. A target sends the JSON protocol's content type and
+      # X-Amz-Target, both signed.
+      def transmit(body, url, signed, target, json_version)
         uri = URI.parse(url)
         headers = {
-          'content-type' => CONTENT_TYPE,
+          'content-type' => target.nil? ? CONTENT_TYPE : "application/x-amz-json-#{json_version}",
           'amz-sdk-invocation-id' => SecureRandom.uuid
         }
+        headers['x-amz-target'] = target unless target.nil?
         headers['amz-sdk-request'] = sdk_request_header(url) if @retry_mode == 'standard'
         skew = @correct_clock_skew ? @clock_skew.clock_correction(url) : 0
         headers['x-amz-date'] = (Time.now.utc + skew).strftime('%Y%m%dT%H%M%SZ') if skew != 0
@@ -413,13 +445,13 @@ module Aws
                Errno::ECONNABORTED, Errno::ECONNRESET, Errno::EPIPE, Errno::EINVAL,
                Errno::ETIMEDOUT, Errno::EHOSTUNREACH, Errno::ECONNREFUSED,
                OpenSSL::SSL::SSLError => e
-          return [0, '', nil, e]
+          return [0, '', nil, nil, e]
         rescue StandardError => e
           raise unless %w[SocketError Socket::ResolutionError].include?(e.class.name)
 
-          return [0, '', nil, e]
+          return [0, '', nil, nil, e]
         end
-        [response.code.to_i, response.body.to_s, response['date'], nil]
+        [response.code.to_i, response.body.to_s, response['date'], response['x-amzn-errortype'], nil]
       end
 
       # The gem's standard handler header: the attempt, the maximum, and a
