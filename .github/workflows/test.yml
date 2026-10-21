@@ -5,10 +5,14 @@ on:
     branches:
       - main
   pull_request:
-  # Spinel master moves daily; this run says when it stops compiling the package
-  schedule:
-    - cron: "0 6 * * *"
   workflow_dispatch:
+  # spinel-master.yml runs these steps against Spinel master
+  workflow_call:
+    inputs:
+      spinel-revision:
+        description: The Spinel revision to test with instead of SPINEL_REVISION
+        type: string
+        required: false
 
 env:
   # The Spinel revision this package is tested with, see README.md
@@ -28,13 +32,9 @@ jobs:
 
       - name: Choose Spinel revision
         id: spinel
-        run: |
-          if [ "$GITHUB_EVENT_NAME" = schedule ]; then
-            revision=$(git ls-remote https://github.com/matz/spinel refs/heads/master | cut -f1)
-          else
-            revision=$SPINEL_REVISION
-          fi
-          echo "revision=$revision" >> "$GITHUB_OUTPUT"
+        env:
+          REQUESTED: ${{ inputs.spinel-revision }}
+        run: echo "revision=${REQUESTED:-$SPINEL_REVISION}" >> "$GITHUB_OUTPUT"
 
       # Outside the checkout, or spin test would take Spinel's own sources as the package's
       - name: Restore Spinel

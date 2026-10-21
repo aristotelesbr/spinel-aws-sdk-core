@@ -1,0 +1,61 @@
+name: Spinel master
+
+# test.yml checks the package against the pinned SPINEL_REVISION. This runs the
+# same steps against Spinel master twice a month, to say when master stops
+# compiling the package before the pin moves, and keeps one issue open for it.
+on:
+  schedule:
+    - cron: "0 6 1,15 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  revision:
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.master.outputs.sha }}
+    steps:
+      - id: master
+        run: echo "sha=$(git ls-remote https://github.com/matz/spinel refs/heads/master | cut -f1)" >> "$GITHUB_OUTPUT"
+
+  test:
+    needs: revision
+    uses: ./.github/workflows/test.yml
+    with:
+      spinel-revision: ${{ needs.revision.outputs.sha }}
+
+  report:
+    needs: [revision, test]
+    if: always()
+    runs-on: ubuntu-24.04
+    steps:
+      - env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RESULT: ${{ needs.test.result }}
+          SHA: ${{ needs.revision.outputs.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          label=spinel-master
+          open=$(gh issue list --state open --label "$label" --json number --jq '.[0].number')
+          spinel="[matz/spinel@${SHA:0:9}](https://github.com/matz/spinel/commit/$SHA)"
+
+          if [ "$RESULT" = success ]; then
+            if [ -n "$open" ]; then
+              gh issue close "$open" --comment "Spinel master passes again at $spinel: $RUN_URL"
+            fi
+            exit 0
+          fi
+
+          body="The package does not pass against Spinel master at $spinel ($RESULT): $RUN_URL
+
+          The pinned revision in \`test.yml\` is unaffected. Find the Spinel commit that broke it before moving the pin."
+          if [ -n "$open" ]; then
+            gh issue comment "$open" --body "$body"
+          else
+            gh label create "$label" --color D93F0B --description "The package does not pass against Spinel master" --force
+            gh issue create --title "Spinel master breaks the package" --label "$label" --body "$body"
+          fi

@@ -112,7 +112,9 @@ The tests cover:
 Every `.expected` is the real gem's output. Tested with Spinel `165974895`.
 
 `.github/workflows/test.yml` runs both on Linux and macOS on every push
-against that Spinel revision, and every day against Spinel master.
+against that Spinel revision. `.github/workflows/spinel-master.yml` runs the
+same tests against Spinel master on the 1st and 15th of each month and keeps
+one issue labeled `spinel-master` open while master does not pass.
 
 ## License
 
