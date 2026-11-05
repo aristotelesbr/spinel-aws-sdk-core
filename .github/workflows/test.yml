@@ -16,7 +16,7 @@ on:
 
 env:
   # The Spinel revision this package is tested with, see README.md
-  SPINEL_REVISION: 1659748955ebe9aaf9c91fad62609c852996e4ea
+  SPINEL_REVISION: 9cd3036cb7d24c27feded1016c4df2d28aebb2c7
 
 jobs:
   test:
