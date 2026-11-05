@@ -55,7 +55,7 @@ The package has three parts:
 | Where | The gem | Here | Why |
 |---|---|---|---|
 | `aws-sdk-core.rb` | autoloads every part, Seahorse, aws-partitions and jmespath | requires the parts the package carries | the package carries what the client needs |
-| `errors.rb`, `ServiceError#initialize` | `DynamicErrors` creates a class per error code at run time and sets its code | error classes are generated; the code is passed in, and defaults to nil | a compiled program defines its classes ahead of time |
+| `errors.rb` | `DynamicErrors` creates a class per error code at run time and sets its code | the module is not carried; error classes are generated, and `ServiceError#initialize` takes the code, which defaults to nil | a compiled program defines its classes ahead of time |
 | `errors.rb`, `possible_regions` | lists the regions from aws-partitions | empty | the package does not carry aws-partitions |
 | `shared_config.rb` | `config_reader` defines 33 readers | the 33 readers written out | a compiled program defines its methods ahead of time |
 | `shared_config.rb`, `credential_provider_chain.rb` | `with_metrics` records User-Agent metrics | runs its block | the package does not build the User-Agent metrics |
@@ -109,7 +109,7 @@ The tests cover:
 - `assume_role_test.rb`: assume role and web identity;
 - `endpoints_test.rb`: configured endpoints.
 
-Every `.expected` is the real gem's output. Tested with Spinel `165974895`.
+Every `.expected` is the real gem's output. Tested with Spinel `9cd3036cb`.
 
 `.github/workflows/test.yml` runs both on Linux and macOS on every push
 against that Spinel revision. `.github/workflows/spinel-master.yml` runs the
