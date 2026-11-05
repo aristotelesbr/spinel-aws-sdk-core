@@ -12,7 +12,7 @@ SPIN=${SPIN:-spin}
 cruby() {
   if [ -n "${RUBY:-}" ]; then "$RUBY" "$@"; else mise exec ruby@4.0.2 -- ruby "$@"; fi
 }
-INCLUDES=$("$SPIN" flags | sed 's/--require-gate//')
+INCLUDES=$("$SPIN" flags | sed 's/--require-gate//; s/--strict-require//')
 # base64 is a bundled gem in Ruby 4, so --disable-gems hides it; the
 # package run sees it, and nothing else from the bundle, through its path.
 BASE64_LIB=$(cruby -rbundler/setup -e 'print Gem.loaded_specs["base64"].full_gem_path + "/lib"')
